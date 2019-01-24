@@ -19,6 +19,7 @@
         $.getJSON("api/loan", function (data) {
             var tablecontent = $("#loantab tbody");
             console.log(data);
+            tablecontent.empty();
             for (var i = 0; i < data.length; i++) {
                 console.log(data[i]);
                 var complete = "❌";
