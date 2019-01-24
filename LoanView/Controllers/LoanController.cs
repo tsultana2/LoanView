@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using LoanView.Models;
 using Microsoft.EntityFrameworkCore;
+using LoanView.Services;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
@@ -14,32 +15,24 @@ namespace LoanView.Controllers
     [ApiController]
     public class LoanController : ControllerBase
     {
-        private readonly LoanContext _context;
-        public LoanController(LoanContext context)
+        private readonly LoanService _loanService;
+        public LoanController(LoanService loanService)
         {
-            _context = context;
-            if(_context.LoanItems.Count()==0)
-            {
-                _context.LoanItems.Add(new LoanItem { Name = "Item1" });
-                _context.SaveChanges();
-
-
-            }
-
-                       
+            _loanService = loanService;
+                           
         }
-        // GET: api/Todo
+        // GET: api/loan
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<LoanItem>>> GetLoanItems()
+        public ActionResult<List<LoanItem>> GetLoanItems()
         {
-            return await _context.LoanItems.ToListAsync();
+            return _loanService.Get();
         }
 
         // GET: api/Todo/5
-        [HttpGet("{id}")]
-        public async Task<ActionResult<LoanItem>> GetLoanItem(long id)
+        [HttpGet("{id:length(24)}",Name ="GetLoan")]
+        public ActionResult<LoanItem> GetLoanItem(String id)
         {
-            var loanItem = await _context.LoanItems.FindAsync(id);
+            var loanItem = _loanService.Get(id); 
 
             if (loanItem == null)
             {
@@ -49,43 +42,37 @@ namespace LoanView.Controllers
             return loanItem;
         }
 
-        // POST: api/Todo
+        // POST: api/loan
         [HttpPost]
-        public async Task<ActionResult<LoanItem>> PostLoanItem(LoanItem loanItem)
+        public ActionResult<LoanItem> PostLoanItem(LoanItem loanItem)
         {
-            _context.LoanItems.Add(loanItem);
-            await _context.SaveChangesAsync();
+            _loanService.Create(loanItem);
 
-            return CreatedAtAction("GetTodoItem", new { id = loanItem.Id }, loanItem);
+            return CreatedAtRoute("GetLoanItem", new { id = loanItem.Id.ToString() }, loanItem);
         }
-        // PUT: api/Todo/5
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutLoanItem(long id, LoanItem loanItem)
+        // PUT: api/loan/5
+        [HttpPut("{id:length(24)}")]
+        public IActionResult PutLoanItem(String id, LoanItem loanItem)
         {
-            if (id != loanItem.Id)
+            var loan = _loanService.Get(id);
+            if (loan == null)
             {
-                return BadRequest();
+                return NotFound();            
             }
-
-            _context.Entry(loanItem).State = EntityState.Modified;
-            await _context.SaveChangesAsync();
-
+            _loanService.Update(id, loan);
             return NoContent();
         }
-        // DELETE: api/Todo/5
-        [HttpDelete("{id}")]
-        public async Task<ActionResult<LoanItem>> DeleteLoanItem(long id)
+        // DELETE: api/loan/5
+        [HttpDelete("{id:length(24)}")]
+        public IActionResult DeleteLoanItem(String id)
         {
-            var loanItem = await _context.LoanItems.FindAsync(id);
-            if (loanItem == null)
+            var loan = _loanService.Get(id);
+            if (loan == null)
             {
                 return NotFound();
             }
-
-            _context.LoanItems.Remove(loanItem);
-            await _context.SaveChangesAsync();
-
-            return loanItem;
+            _loanService.Remove(loan.Id);
+            return NoContent();
         }
 
     }
